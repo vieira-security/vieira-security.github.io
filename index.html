@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blog Computação Visual</title>
+<meta name="description" content="Anotações e reflexões ao longo da disciplina de Computação Visual.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#06080c;
+    --bg-2:#0a0e14;
+    --panel:#0d121a;
+    --panel-2:#111823;
+    --line:#1b2532;
+    --line-2:#263243;
+    --text:#d6dee9;
+    --text-strong:#f2f6fb;
+    --muted:#7b889b;
+    --cyan:#3be4ff;
+    --green:#4dffa0;
+    --r:#ff5c7a;
+    --g:#4dffa0;
+    --b:#4d9dff;
+    --glow:0 0 24px rgba(59,228,255,.25);
+    --sans:'IBM Plex Sans', system-ui, sans-serif;
+    --display:'Space Grotesk', system-ui, sans-serif;
+    --mono:'JetBrains Mono', ui-monospace, monospace;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  body::before{
+    /* grade de fundo */
+    content:""; position:fixed; inset:0; z-index:-2; pointer-events:none;
+    background-image:
+      linear-gradient(rgba(59,228,255,.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59,228,255,.045) 1px, transparent 1px);
+    background-size:32px 32px;
+    mask-image:radial-gradient(ellipse at 50% 0%, #000 0%, transparent 75%);
+    -webkit-mask-image:radial-gradient(ellipse at 50% 0%, #000 0%, transparent 75%);
+  }
+  body::after{
+    /* brilho ambiente */
+    content:""; position:fixed; z-index:-1; pointer-events:none;
+    width:900px; height:600px; left:50%; top:-320px; transform:translateX(-50%);
+    background:radial-gradient(closest-side, rgba(59,228,255,.12), transparent);
+  }
+  a{color:inherit;}
+  ::selection{background:rgba(59,228,255,.3); color:var(--text-strong);}
+  .wrap{max-width:1040px; margin:0 auto; padding:0 24px;}
+
+  /* ---------- marca RGB ---------- */
+  .pixel-mark{
+    display:inline-grid;
+    grid-template-columns:repeat(3, 6px);
+    grid-template-rows:repeat(3, 6px);
+    gap:2px; flex:none;
+  }
+  .pixel-mark span{display:block; width:6px; height:6px; border-radius:1px;}
+  .pixel-mark span:nth-child(3n+1){background:var(--r); box-shadow:0 0 6px var(--r);}
+  .pixel-mark span:nth-child(3n+2){background:var(--g); box-shadow:0 0 6px var(--g);}
+  .pixel-mark span:nth-child(3n){background:var(--b); box-shadow:0 0 6px var(--b);}
+  .pixel-mark span:nth-child(2), .pixel-mark span:nth-child(4),
+  .pixel-mark span:nth-child(6), .pixel-mark span:nth-child(8){opacity:.35; box-shadow:none;}
+
+  /* ---------- header ---------- */
+  header{
+    position:sticky; top:0; z-index:20;
+    background:rgba(6,8,12,.78);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-wrap{
+    display:flex; align-items:center; justify-content:space-between; gap:20px;
+    height:60px;
+  }
+  .brand{
+    font-family:var(--mono); font-weight:700; font-size:14px;
+    display:flex; align-items:center; gap:12px;
+    text-decoration:none; color:var(--text-strong); white-space:nowrap;
+  }
+  .brand .cursor{color:var(--cyan); animation:blink 1.1s steps(1) infinite;}
+  @keyframes blink{50%{opacity:0;}}
+  nav{min-width:0;}
+  nav ul{
+    list-style:none; display:flex; gap:4px; margin:0; padding:0;
+    overflow-x:auto; scrollbar-width:none;
+  }
+  nav ul::-webkit-scrollbar{display:none;}
+  nav a{
+    display:block; padding:6px 10px; border-radius:6px;
+    font-family:var(--mono); font-size:12.5px; text-decoration:none;
+    color:var(--muted); white-space:nowrap;
+    transition:color .15s, background .15s;
+  }
+  nav a:hover{color:var(--cyan); background:rgba(59,228,255,.08);}
+
+  /* ---------- hero ---------- */
+  .hero{padding:88px 0 72px;}
+  .hero-grid{
+    display:grid; grid-template-columns:1.15fr .85fr; gap:56px; align-items:center;
+  }
+  .prompt{
+    font-family:var(--mono); font-size:13px; color:var(--muted);
+    margin:0 0 22px;
+  }
+  .prompt .path{color:var(--green);}
+  .prompt .cmd{color:var(--text);}
+  .hero h1{
+    font-family:var(--display); font-weight:700; color:var(--text-strong);
+    font-size:clamp(34px, 5.4vw, 60px);
+    line-height:1.05; letter-spacing:-0.03em;
+    margin:0 0 24px;
+  }
+  .hero h1 .hl{
+    background:linear-gradient(90deg, var(--r), var(--g) 50%, var(--b));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .hero-lead{font-size:18px; color:var(--muted); max-width:50ch; margin:0 0 32px;}
+  .stats{display:flex; flex-wrap:wrap; gap:12px;}
+  .stat{
+    font-family:var(--mono); font-size:12px; color:var(--muted);
+    border:1px solid var(--line-2); border-radius:8px;
+    padding:8px 12px; background:rgba(13,18,26,.6);
+  }
+  .stat b{color:var(--cyan); font-weight:700; margin-right:6px;}
+
+  /* ---------- janela / painel ---------- */
+  .window{
+    background:var(--panel);
+    border:1px solid var(--line-2);
+    border-radius:12px;
+    overflow:hidden;
+    box-shadow:0 30px 60px -30px rgba(0,0,0,.8), var(--glow);
+  }
+  .window-bar{
+    display:flex; align-items:center; gap:8px;
+    padding:10px 14px;
+    background:var(--panel-2);
+    border-bottom:1px solid var(--line);
+    font-family:var(--mono); font-size:12px; color:var(--muted);
+  }
+  .dots{display:flex; gap:6px; margin-right:6px;}
+  .dots i{width:10px; height:10px; border-radius:50%; background:var(--line-2); display:block;}
+  .dots i:nth-child(1){background:#ff5f57;}
+  .dots i:nth-child(2){background:#febc2e;}
+  .dots i:nth-child(3){background:#28c840;}
+  .window-bar .right{margin-left:auto;}
+
+  #sensor{display:block; width:100%; height:auto; aspect-ratio:4/3; image-rendering:pixelated;}
+  .readout{
+    display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    padding:10px 14px; border-top:1px solid var(--line);
+    font-family:var(--mono); font-size:12px; color:var(--muted);
+  }
+  .readout .rv{color:var(--r);} .readout .gv{color:var(--g);} .readout .bv{color:var(--b);}
+
+  /* ---------- seções ---------- */
+  .section-label{
+    font-family:var(--mono); font-size:12.5px; color:var(--cyan);
+    margin:0 0 18px; letter-spacing:.02em;
+  }
+  .section-label::before{content:"// "; color:var(--muted);}
+
+  .sobre{padding:24px 0 72px;}
+  .sobre-card{
+    display:grid; grid-template-columns:200px 1fr; gap:32px;
+    padding:32px; border:1px solid var(--line); border-radius:12px;
+    background:linear-gradient(180deg, rgba(13,18,26,.9), rgba(10,14,20,.6));
+  }
+  .sobre-card .section-label{margin:0;}
+  .sobre-card p{font-size:17px; margin:0; max-width:62ch;}
+
+  /* ---------- índice ---------- */
+  .toc{padding:0 0 64px;}
+  .toc-grid{
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;
+  }
+  .toc-item{
+    display:flex; flex-direction:column; gap:10px;
+    padding:18px; border:1px solid var(--line); border-radius:10px;
+    background:rgba(13,18,26,.55); text-decoration:none;
+    transition:border-color .2s, transform .2s, background .2s;
+  }
+  .toc-item:hover{border-color:var(--cyan); background:rgba(59,228,255,.05); transform:translateY(-2px);}
+  .toc-top{display:flex; justify-content:space-between; font-family:var(--mono); font-size:11.5px; color:var(--muted);}
+  .toc-top .n{color:var(--cyan);}
+  .toc-item strong{font-family:var(--display); font-weight:600; font-size:16.5px; color:var(--text-strong); line-height:1.3;}
+  .toc-item.is-new{border-color:rgba(77,255,160,.45);}
+  .badge-new{
+    font-family:var(--mono); font-size:10.5px; color:var(--bg); background:var(--green);
+    padding:1px 7px; border-radius:4px; font-weight:700;
+  }
+
+  /* ---------- posts ---------- */
+  .posts{padding:0 0 96px; display:flex; flex-direction:column; gap:28px;}
+  .post{scroll-margin-top:84px;}
+  .post .window{box-shadow:0 30px 60px -40px rgba(0,0,0,.9);}
+  .post-inner{padding:40px 44px 44px;}
+  .post-meta{
+    display:flex; flex-wrap:wrap; align-items:center; gap:10px;
+    font-family:var(--mono); font-size:12px; color:var(--muted);
+    margin-bottom:16px;
+  }
+  .tag{
+    color:var(--cyan); border:1px solid rgba(59,228,255,.35);
+    background:rgba(59,228,255,.07);
+    padding:2px 9px; border-radius:999px;
+  }
+  .post h2{
+    font-family:var(--display); font-weight:700; color:var(--text-strong);
+    font-size:clamp(24px, 3.2vw, 34px);
+    letter-spacing:-0.02em; line-height:1.15;
+    margin:0 0 24px; max-width:26ch;
+  }
+  .post-body{max-width:68ch; font-size:16.5px;}
+  .post-body p{margin:0 0 18px;}
+  .post-body p:last-child{margin-bottom:0;}
+  .post-body em{color:var(--text-strong);}
+  .post-body code{
+    font-family:var(--mono); font-size:.88em; color:var(--green);
+    background:rgba(77,255,160,.08); padding:1px 6px; border-radius:4px;
+  }
+
+  /* ---------- extras do post 06 ---------- */
+  .kernels{
+    display:flex; flex-wrap:wrap; gap:28px; align-items:center;
+    margin:26px 0 28px; padding:22px;
+    border:1px dashed var(--line-2); border-radius:10px; background:var(--bg-2);
+  }
+  .kernel{display:flex; flex-direction:column; gap:10px; align-items:flex-start;}
+  .kernel-name{font-family:var(--mono); font-size:12px; color:var(--muted);}
+  .kernel-name b{color:var(--cyan);}
+  .matrix{display:grid; grid-template-columns:repeat(3, 44px); gap:4px;}
+  .matrix span{
+    height:44px; display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:14px; border-radius:6px;
+    background:var(--panel-2); border:1px solid var(--line); color:var(--muted);
+  }
+  .matrix .pos{color:var(--green); border-color:rgba(77,255,160,.35); background:rgba(77,255,160,.07);}
+  .matrix .neg{color:var(--r); border-color:rgba(255,92,122,.35); background:rgba(255,92,122,.07);}
+  .formula{
+    font-family:var(--mono); font-size:13px; color:var(--text);
+    padding:12px 14px; border-radius:8px; background:var(--panel-2); border:1px solid var(--line);
+  }
+  .formula b{color:var(--cyan);}
+
+  .demo{margin:28px 0;}
+  .demo .window{box-shadow:none;}
+  .demo-stage{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line);}
+  .demo-stage figure{margin:0; background:var(--bg-2); position:relative;}
+  .demo-stage canvas{display:block; width:100%; height:auto; aspect-ratio:3/2;}
+  .demo-stage figcaption{
+    position:absolute; left:10px; top:10px;
+    font-family:var(--mono); font-size:11px; color:var(--text);
+    background:rgba(6,8,12,.75); padding:3px 8px; border-radius:4px;
+  }
+  .demo-controls{
+    display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+    padding:12px 14px; border-top:1px solid var(--line);
+  }
+  .demo-controls span{font-family:var(--mono); font-size:12px; color:var(--muted); margin-right:4px;}
+  .demo-controls button{
+    font-family:var(--mono); font-size:12px; color:var(--muted);
+    background:transparent; border:1px solid var(--line-2); border-radius:6px;
+    padding:6px 12px; cursor:pointer; transition:all .15s;
+  }
+  .demo-controls button:hover{color:var(--text); border-color:var(--muted);}
+  .demo-controls button[aria-pressed="true"]{
+    color:var(--bg); background:var(--cyan); border-color:var(--cyan); font-weight:700;
+  }
+  .demo-controls label{
+    display:flex; align-items:center; gap:8px; margin-left:auto;
+    font-family:var(--mono); font-size:12px; color:var(--muted); cursor:pointer;
+  }
+  .demo-controls input{accent-color:var(--cyan);}
+
+  /* ---------- footer ---------- */
+  footer{border-top:1px solid var(--line); padding:28px 0;}
+  .footer-wrap{
+    display:flex; justify-content:space-between; align-items:center; gap:12px;
+    font-family:var(--mono); font-size:12px; color:var(--muted);
+  }
+  .status{display:flex; align-items:center; gap:8px;}
+  .status::before{
+    content:""; width:7px; height:7px; border-radius:50%;
+    background:var(--green); box-shadow:0 0 8px var(--green);
+  }
+  .back-top{text-decoration:none; color:var(--muted); transition:color .15s;}
+  .back-top:hover{color:var(--cyan);}
+
+  :focus-visible{outline:2px solid var(--cyan); outline-offset:2px; border-radius:4px;}
+
+  /* ---------- responsivo ---------- */
+  @media (max-width:880px){
+    .hero{padding:56px 0 48px;}
+    .hero-grid{grid-template-columns:1fr; gap:40px;}
+    .toc-grid{grid-template-columns:repeat(2, 1fr);}
+    .sobre-card{grid-template-columns:1fr; gap:14px;}
+  }
+  @media (max-width:640px){
+    .wrap{padding:0 16px;}
+    .brand .label{display:none;}
+    .toc-grid{grid-template-columns:1fr;}
+    .post-inner{padding:28px 20px 30px;}
+    .sobre-card{padding:22px 20px;}
+    .demo-stage{grid-template-columns:1fr;}
+    .demo-controls label{margin-left:0;}
+    .kernels{gap:20px; padding:16px;}
+    .matrix{grid-template-columns:repeat(3, 38px);}
+    .matrix span{height:38px; font-size:13px;}
+    .footer-wrap{flex-direction:column; align-items:flex-start;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto;}
+    .brand .cursor{animation:none;}
+    .toc-item{transition:none;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav-wrap">
+    <a class="brand" href="#inicio" aria-label="Computação Visual — início">
+      <span class="pixel-mark" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>
+      <span class="label">computacao_visual<span class="cursor">_</span></span>
+    </a>
+    <nav aria-label="Navegação">
+      <ul>
+        <li><a href="#sobre">sobre</a></li>
+        <li><a href="#post-1">01</a></li>
+        <li><a href="#post-2">02</a></li>
+        <li><a href="#post-3">03</a></li>
+        <li><a href="#post-4">04</a></li>
+        <li><a href="#post-5">05</a></li>
+        <li><a href="#post-6">06</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<section class="hero" id="inicio">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="prompt"><span class="path">~/computacao-visual</span> $ <span class="cmd">./semestre --ano 2026</span></p>
+      <h1>Da geometria ao pixel: um semestre de <span class="hl">Computação Visual</span></h1>
+      <p class="hero-lead">Anotações e reflexões pessoais ao longo da disciplina — o que eu esperava encontrar, o que fui descobrindo, e o que ainda não sei.</p>
+      <div class="stats">
+        <span class="stat"><b>06</b>posts</span>
+        <span class="stat"><b>RGB</b>3 canais</span>
+        <span class="stat"><b>8bit</b>256 níveis</span>
+      </div>
+    </div>
+
+    <div class="window" aria-hidden="true">
+      <div class="window-bar">
+        <span class="dots"><i></i><i></i><i></i></span>
+        frame_0001.raw
+        <span class="right">32×24 px</span>
+      </div>
+      <canvas id="sensor" width="32" height="24"></canvas>
+      <div class="readout">
+        <span id="ro-pos">pixel (16, 12)</span>
+        <span>rgb(<span class="rv" id="ro-r">0</span>, <span class="gv" id="ro-g">0</span>, <span class="bv" id="ro-b">0</span>)</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sobre" id="sobre">
+  <div class="wrap">
+    <div class="sobre-card">
+      <h2 class="section-label">sobre este blog</h2>
+      <p>Espaço onde registro, aula a aula, minhas impressões sobre a disciplina de Computação Visual — sem pretensão de resumo técnico, só o que realmente ficou de cada aula.</p>
+    </div>
+  </div>
+</section>
+
+<section class="toc" aria-labelledby="toc-title">
+  <div class="wrap">
+    <h2 class="section-label" id="toc-title">índice</h2>
+    <div class="toc-grid">
+      <a class="toc-item" href="#post-1"><span class="toc-top"><span class="n">#01</span><span>expectativa</span></span><strong>O que eu esperava de Computação Visual</strong></a>
+      <a class="toc-item" href="#post-2"><span class="toc-top"><span class="n">#02</span><span>pixels</span></span><strong>Fundamentos da Imagem e Pixels</strong></a>
+      <a class="toc-item" href="#post-3"><span class="toc-top"><span class="n">#03</span><span>amostragem</span></span><strong>Amostragem e quantização</strong></a>
+      <a class="toc-item" href="#post-4"><span class="toc-top"><span class="n">#04</span><span>cnn</span></span><strong>A história e o funcionamento das CNNs</strong></a>
+      <a class="toc-item" href="#post-5"><span class="toc-top"><span class="n">#05</span><span>visão computacional</span></span><strong>Visão computacional em carros autônomos</strong></a>
+      <a class="toc-item is-new" href="#post-6"><span class="toc-top"><span class="n">#06</span><span class="badge-new">novo</span></span><strong>Detecção de bordas: como o computador encontra contornos</strong></a>
+    </div>
+  </div>
+</section>
+
+<section class="posts wrap" aria-label="Posts">
+
+  <article class="post" id="post-1">
+    <div class="window">
+      <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span>post_01.md<span class="right">~4 min</span></div>
+      <div class="post-inner">
+        <div class="post-meta"><span>25 ago 2026</span><span class="tag">expectativa</span></div>
+        <h2>O que eu esperava de Computação Visual</h2>
+        <div class="post-body">
+          <p>Computação Visual é matéria obrigatória na minha grade, então nem cheguei a escolher — só vi o nome na ementa e já fui montando uma ideia na cabeça. E, sinceramente, o nome não deixa muita margem pra dúvida, né? "Visual" pra mim soou direto como gráfico, modelagem 3D, arte digital. Imaginei aulas mexendo em softwares de modelagem, entendendo como se cria uma cena em 3D, talvez até um pé na parte mais artística da computação.</p>
+          <p>Cheguei na primeira aula com essa expectativa toda montada. E a aula foi sobre geometria.</p>
+          <p>Não uma geometria "de passagem", citada rapidamente — foi o assunto inteiro da aula. Confesso que estranhei um pouco no começo, porque não era exatamente o que eu tinha na cabeça quando pensei em "visual". Mas aos poucos foi ficando claro que faz sentido: antes de chegar em qualquer modelagem 3D ou renderização bonita, tem uma base matemática que sustenta tudo isso, e é por aí que a disciplina parece que vai começar.</p>
+          <p>Ainda é cedo pra saber se essa primeira impressão vai se confirmar ao longo do semestre, mas já ficou claro que "visual" aqui tem menos a ver com estética e mais com a lógica por trás dela.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="post" id="post-2">
+    <div class="window">
+      <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span>post_02.md<span class="right">~3 min</span></div>
+      <div class="post-inner">
+        <div class="post-meta"><span>18 ago 2026</span><span class="tag">pixels</span></div>
+        <h2>Fundamentos da Imagem e Pixels</h2>
+        <div class="post-body">
+          <p>Jogo muitos jogos em 2D, tanto no celular quanto no PC, e boa parte deles tem aquela estética de pixel art bem marcada — os quadradinhos aparecendo na textura, os personagens meio "quadrados" de propósito. Sempre gostei desse estilo, mas nunca tinha parado pra pensar no porquê daquele nome, ou no que exatamente estava vendo quando reparava nos blocos de cor formando um cenário ou um personagem.</p>
+          <p>Na aula sobre pixel, isso ficou bem mais claro. Aquilo que eu sempre chamei de "estilo pixelado" nos jogos não é só uma escolha estética aleatória — é, literalmente, deixar visível a unidade mínima que forma qualquer imagem digital: o pixel. A diferença é que, numa imagem "normal", os pixels são tão pequenos e numerosos que a gente nem percebe que eles existem. Já na pixel art, o jogo usa poucos pixels, bem grandes, de propósito — e é exatamente por isso que dá pra ver os "quadradinhos" com tanta clareza.</p>
+          <p>Foi engraçado perceber que uma coisa que eu já enxergava há anos, jogando, tinha uma explicação tão direta por trás. Às vezes o conceito técnico não é algo novo — só coloca nome no que a gente já vinha vendo sem perceber.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="post" id="post-3">
+    <div class="window">
+      <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span>post_03.md<span class="right">~5 min</span></div>
+      <div class="post-inner">
+        <div class="post-meta"><span>02 out 2026</span><span class="tag">amostragem &amp; quantização</span></div>
+        <h2>Amostragem e quantização</h2>
+        <div class="post-body">
+          <p>Uma cena real é contínua: a luz varia suavemente no espaço, sem "degraus" nem pontos definidos. O problema é que um computador não trabalha com contínuo, só com números discretos — então, em algum momento, essa cena precisa ser convertida numa grade finita de valores. É aí que entram dois processos que, até essa aula, eu nunca tinha pensado como coisas separadas: amostragem e quantização.</p>
+          <p>Amostragem é decidir <em>onde</em> medir. O computador escolhe pontos da cena — uma grade — e cada ponto escolhido vira um pixel. Quanto mais pontos, mais fiel a imagem fica ao que existia na cena real; quanto menos pontos, mais grosseira ela parece, porque muita informação simplesmente não foi capturada.</p>
+          <p>Quantização é decidir <em>quanto vale</em> cada medida. A luz captada em cada ponto ainda é um valor contínuo — mas o computador só consegue guardar um número limitado de níveis, como 256 tons numa imagem de 8 bits. Então cada valor medido é arredondado pro nível disponível mais próximo. Com poucos níveis, aparecem transições bruscas entre tons parecidos; com mais níveis, a transição fica suave.</p>
+          <p>A cor entra multiplicando essa lógica: em vez de medir só "quantidade de luz", o sensor mede a intensidade em três canais separados — vermelho, verde e azul — porque é assim que o olho humano também enxerga, combinando três tipos de receptor sensíveis a essas faixas de cor. Cada pixel colorido, no fim, é resultado de três valores quantizados somados.</p>
+          <p>O que ficou mais claro pra mim foi a matemática por trás disso tudo: uma imagem digital é, essencialmente, uma função discreta. Pra cada posição (x, y) na grade existe um valor — ou três, no caso de cor. Amostragem define o tamanho dessa grade; quantização define quantos valores cada posição da grade pode assumir. Resolução, profundidade de cor, tamanho de arquivo — tudo isso nasce dessas duas escolhas.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="post" id="post-4">
+    <div class="window">
+      <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span>post_04.md<span class="right">~4 min</span></div>
+      <div class="post-inner">
+        <div class="post-meta"><span>09 out 2026</span><span class="tag">redes neurais convolucionais</span></div>
+        <h2>A história e o funcionamento das CNNs</h2>
+        <div class="post-body">
+          <p>Toda vez que desbloqueio o celular olhando pra tela, tem uma CNN rodando ali por trás — e até essa aula eu nunca tinha parado pra pensar em como uma rede neural "olha" pra um rosto e decide se é o meu ou não. A resposta começa, de um jeito curioso, na biologia: as Redes Neurais Convolucionais (CNNs) são inspiradas no próprio córtex visual dos animais, onde cada neurônio não enxerga a cena inteira de uma vez — ele reage só a uma região pequena e específica do campo de visão, o chamado campo receptivo. As CNNs recriam essa lógica de forma artificial.</p>
+          <p>Isso resolve um problema real: numa rede neural tradicional, totalmente conectada, cada pixel da imagem se conectaria a cada neurônio da camada seguinte, gerando uma quantidade enorme de parâmetros pra treinar. As CNNs contornam isso com a operação de convolução — pequenos filtros que "deslizam" pela imagem, região por região, procurando padrões locais como bordas, texturas e formas simples. Esses padrões vão se combinando em camadas mais profundas até a rede reconhecer algo mais complexo, como um rosto inteiro.</p>
+          <p>O ponto que mais me chamou atenção foi o motivo prático disso tudo: como o mesmo filtro é reaproveitado em toda a imagem, em vez de existir uma conexão única pra cada pixel, o número de parâmetros cai drasticamente — e é isso que torna viável rodar esse tipo de reconhecimento até num celular, em tempo real, sem precisar de um supercomputador. Faz sentido que CNNs tenham virado um dos pilares da computação visual moderna: reconhecimento facial, classificação de objetos, segmentação de imagem — tudo isso parte da mesma ideia central de "olhar em pedaços" antes de entender o todo.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="post" id="post-5">
+    <div class="window">
+      <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span>post_05.md<span class="right">~5 min</span></div>
+      <div class="post-inner">
+        <div class="post-meta"><span>16 out 2026</span><span class="tag">visão computacional</span></div>
+        <h2>Visão computacional em carros autônomos</h2>
+        <div class="post-body">
+          <p>Depois de ver como uma CNN reconhece um rosto, ficou mais fácil entender um problema que parecia muito mais complexo: como um carro autônomo "enxerga" a rua. No fundo, é a mesma lógica que vimos nos posts anteriores, só que aplicada em cascata — e com uma diferença importante: não basta reconhecer o que está na imagem, é preciso decidir o que fazer com essa informação em milissegundos.</p>
+          <p>Um carro autônomo depende de câmeras (às vezes combinadas com sensores como lidar e radar) que capturam a cena continuamente, quadro a quadro. Cada quadro passa pelo mesmo processo que já vimos: amostragem e quantização transformam a cena em uma grade de pixels; camadas convolucionais varrem essa grade procurando padrões — bordas de uma faixa de pedestre, o contorno de outro carro, a forma de uma placa de trânsito. A diferença é que aqui não existe só uma pergunta ("é um rosto ou não?"), existem várias perguntas simultâneas: onde estão os outros veículos, onde está a faixa da pista, existe um pedestre prestes a atravessar, o semáforo está em que cor.</p>
+          <p>O que eu achei mais interessante é que "ver" e "entender" são etapas diferentes. Uma câmera comum já captura a imagem perfeitamente — o difícil não é enxergar, é interpretar: separar o que é fundo do que é objeto relevante, estimar distância e velocidade de cada coisa, e tomar uma decisão seguindo tudo isso, tudo em tempo real, várias vezes por segundo. É a computação visual saindo do campo de "reconhecer uma imagem parada" e entrando no campo de "reagir a um mundo em movimento".</p>
+          <p>Dá pra imaginar o tamanho do desafio: qualquer erro de interpretação — confundir uma sombra com um obstáculo, ou não notar uma placa desgastada — tem consequência real, não é só um filtro que "errou o rosto" numa foto. Isso me fez enxergar de outro jeito o quanto a base que estamos vendo na disciplina (pixel, grade, convolução) sustenta coisas que parecem, à primeira vista, muito mais sofisticadas do que realmente são na raiz.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="post" id="post-6">
+    <div class="window">
+      <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span>post_06.md<span class="right">~6 min</span></div>
+      <div class="post-inner">
+        <div class="post-meta"><span>23 out 2026</span><span class="tag">filtros &amp; bordas</span></div>
+        <h2>Detecção de bordas: como o computador encontra contornos</h2>
+        <div class="post-body">
+          <p>Nos dois últimos posts eu repeti a mesma frase umas três vezes: os primeiros filtros de uma CNN procuram "bordas". Escrevi isso sem pensar muito, e depois a palavra ficou martelando na cabeça — o que é uma borda pro computador? Pra gente é óbvio: é onde termina a mesa e começa a parede, é o contorno do rosto numa foto. Mas o computador não vê mesa, parede nem rosto. Ele só tem aquela grade de números que vimos no post de amostragem e quantização.</p>
+          <p>A resposta acabou sendo mais simples do que eu esperava: borda é onde o valor muda de repente. Se você percorre uma linha de pixels e os valores vão <code>32, 34, 31, 35</code> e de uma hora pra outra pulam pra <code>198, 201</code>, ali tem uma borda. Matematicamente, isso é uma derivada — a taxa de variação da intensidade. Só que, como a imagem é uma função discreta, não dá pra derivar no sentido "de cálculo"; a derivada vira, basicamente, uma subtração entre pixels vizinhos.</p>
+          <p>O jeito clássico de fazer isso é o filtro de Sobel: uma matriz 3×3 que desliza pela imagem — a mesma operação de convolução das CNNs. Na prática são duas matrizes, uma que mede a variação na horizontal (<code>Gx</code>) e outra na vertical (<code>Gy</code>). Cada uma subtrai os pixels de um lado pelos do outro, dando um peso maior pra linha do meio. Onde a região é uniforme, os positivos e negativos se cancelam e o resultado fica perto de zero; onde existe um contraste forte, o resultado dispara.</p>
+
+          <div class="kernels" role="group" aria-label="Kernels do filtro de Sobel">
+            <div class="kernel">
+              <span class="kernel-name"><b>Gx</b> · variação horizontal</span>
+              <div class="matrix">
+                <span class="neg">−1</span><span>0</span><span class="pos">+1</span>
+                <span class="neg">−2</span><span>0</span><span class="pos">+2</span>
+                <span class="neg">−1</span><span>0</span><span class="pos">+1</span>
+              </div>
+            </div>
+            <div class="kernel">
+              <span class="kernel-name"><b>Gy</b> · variação vertical</span>
+              <div class="matrix">
+                <span class="neg">−1</span><span class="neg">−2</span><span class="neg">−1</span>
+                <span>0</span><span>0</span><span>0</span>
+                <span class="pos">+1</span><span class="pos">+2</span><span class="pos">+1</span>
+              </div>
+            </div>
+            <div class="formula">força da borda<br><b>G = √(Gx² + Gy²)</b></div>
+          </div>
+
+          <p>Juntando as duas direções com aquela fórmula de magnitude, cada pixel ganha um número que diz "quão borda" ele é. Pra ver isso funcionando de verdade, montei uma demo aqui embaixo: uma imagem sintética, gerada no próprio navegador, e o resultado do Sobel aplicado nela. Dá pra alternar entre só a horizontal, só a vertical e a magnitude — e ligar um ruído pra ver o que acontece.</p>
+
+          <div class="demo">
+            <div class="window">
+              <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span>sobel_demo.js<span class="right">240×160 px</span></div>
+              <div class="demo-stage">
+                <figure><canvas id="demo-src" width="240" height="160" aria-label="Imagem original sintética com formas geométricas"></canvas><figcaption>entrada</figcaption></figure>
+                <figure><canvas id="demo-out" width="240" height="160" aria-label="Resultado do filtro de Sobel"></canvas><figcaption id="demo-cap">saída · magnitude</figcaption></figure>
+              </div>
+              <div class="demo-controls">
+                <span>filtro:</span>
+                <button type="button" data-mode="gx" aria-pressed="false">Gx</button>
+                <button type="button" data-mode="gy" aria-pressed="false">Gy</button>
+                <button type="button" data-mode="mag" aria-pressed="true">magnitude</button>
+                <label><input type="checkbox" id="demo-noise"> adicionar ruído</label>
+              </div>
+            </div>
+          </div>
+
+          <p>Ligando o ruído dá pra ver o maior problema do Sobel: ele não sabe diferenciar uma borda "de verdade" de um pixel que só saiu um pouco diferente do vizinho. Qualquer granulado vira um monte de pontinhos acesos. Por isso, na prática, quase sempre se aplica um desfoque antes (um filtro gaussiano, que também é uma convolução) — e algoritmos mais completos, como o de Canny, ainda afinam as bordas e descartam as fracas. Isso conecta direto com o post dos carros autônomos: confundir uma sombra ou uma mancha no asfalto com a faixa da pista é exatamente esse problema, só que com consequência real.</p>
+          <p>O que mais me marcou foi a comparação com as CNNs. No Sobel, alguém escolheu aqueles números (−1, −2, +1, +2) à mão, pensando no que uma borda significa. Numa CNN, ninguém escolhe nada: a rede começa com filtros aleatórios e aprende os valores sozinha durante o treinamento. E o curioso é que, quando se visualizam os filtros da primeira camada de redes já treinadas, muitos deles acabam parecidos com detectores de borda — a rede "redescobre" sozinha uma ideia que já existia muito antes dela. No fim, a lição pra mim foi essa: o computador não enxerga formas, ele enxerga diferenças. A forma é algo que a gente monta depois, em cima delas.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap footer-wrap">
+    <span class="status">Blog Computação Visual · atualizado a cada aula</span>
+    <a class="back-top" href="#inicio">cd ~ ↑</a>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- hero: "sensor" de baixa resolução ---------- */
+  var sensor = document.getElementById('sensor');
+  if (sensor && sensor.getContext) {
+    var sctx = sensor.getContext('2d');
+    var W = sensor.width, H = sensor.height;
+    var img = sctx.createImageData(W, H);
+    var roPos = document.getElementById('ro-pos');
+    var roR = document.getElementById('ro-r'), roG = document.getElementById('ro-g'), roB = document.getElementById('ro-b');
+    var probe = {x: 16, y: 12};
+
+    sensor.addEventListener('mousemove', function(e){
+      var rect = sensor.getBoundingClientRect();
+      probe.x = Math.min(W - 1, Math.max(0, Math.floor((e.clientX - rect.left) / rect.width * W)));
+      probe.y = Math.min(H - 1, Math.max(0, Math.floor((e.clientY - rect.top) / rect.height * H)));
+    });
+
+    function frame(t){
+      var time = t * 0.0006;
+      var scan = (t * 0.012) % (H + 6);
+      for (var y = 0; y < H; y++) {
+        for (var x = 0; x < W; x++) {
+          var v1 = Math.sin(x * 0.28 + time);
+          var v2 = Math.sin((x * 0.5 + y * 0.6) * 0.35 + time * 1.3);
+          var v3 = Math.sin(Math.sqrt((x - 16) * (x - 16) + (y - 12) * (y - 12)) * 0.45 - time * 1.7);
+          var v = (v1 + v2 + v3) / 3;
+          var r = 40 + 200 * (0.5 + 0.5 * Math.sin(Math.PI * v + 0.0));
+          var g = 30 + 190 * (0.5 + 0.5 * Math.sin(Math.PI * v + 2.1));
+          var b = 60 + 195 * (0.5 + 0.5 * Math.sin(Math.PI * v + 4.2));
+          // quantização em 6 níveis por canal
+          r = Math.round(r / 51) * 51; g = Math.round(g / 51) * 51; b = Math.round(b / 51) * 51;
+          var d = Math.abs(y - scan);
+          var boost = d < 1 ? 1.6 : (d < 2.5 ? 1.2 : 0.62);
+          var i = (y * W + x) * 4;
+          img.data[i]     = Math.min(255, r * boost);
+          img.data[i + 1] = Math.min(255, g * boost);
+          img.data[i + 2] = Math.min(255, b * boost);
+          img.data[i + 3] = 255;
+        }
+      }
+      // destaca o pixel sondado
+      var pi = (probe.y * W + probe.x) * 4;
+      var pr = img.data[pi], pg = img.data[pi + 1], pb = img.data[pi + 2];
+      sctx.putImageData(img, 0, 0);
+      sctx.strokeStyle = '#3be4ff';
+      sctx.lineWidth = 0.25;
+      sctx.strokeRect(probe.x + 0.125, probe.y + 0.125, 0.75, 0.75);
+      roPos.textContent = 'pixel (' + probe.x + ', ' + probe.y + ')';
+      roR.textContent = pr; roG.textContent = pg; roB.textContent = pb;
+      if (!reduced) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  /* ---------- post 06: demo do filtro de Sobel ---------- */
+  var src = document.getElementById('demo-src');
+  var out = document.getElementById('demo-out');
+  if (!src || !out || !src.getContext) return;
+  var cs = src.getContext('2d'), co = out.getContext('2d');
+  var DW = src.width, DH = src.height;
+  var mode = 'mag';
+  var noiseBox = document.getElementById('demo-noise');
+  var cap = document.getElementById('demo-cap');
+  var labels = {gx: 'saída · Gx', gy: 'saída · Gy', mag: 'saída · magnitude'};
+
+  // ruído determinístico (mesma imagem a cada render)
+  var noise = new Float32Array(DW * DH);
+  var seed = 7;
+  for (var n = 0; n < noise.length; n++) {
+    seed = (seed * 16807) % 2147483647;
+    noise[n] = (seed / 2147483647 - 0.5) * 70;
+  }
+
+  function drawScene(){
+    var grad = cs.createLinearGradient(0, 0, DW, 0);
+    grad.addColorStop(0, '#1d2a3a'); grad.addColorStop(1, '#3a4d66');
+    cs.fillStyle = grad; cs.fillRect(0, 0, DW, DH);
+    cs.fillStyle = '#ff5c7a'; cs.beginPath(); cs.arc(64, 70, 34, 0, Math.PI * 2); cs.fill();
+    cs.fillStyle = '#4dffa0'; cs.fillRect(122, 30, 70, 52);
+    cs.fillStyle = '#4d9dff'; cs.beginPath(); cs.moveTo(150, 140); cs.lineTo(212, 140); cs.lineTo(181, 92); cs.closePath(); cs.fill();
+    cs.fillStyle = '#e8eef6'; cs.fillRect(24, 122, 84, 10);
+    cs.fillStyle = '#e8eef6'; cs.font = 'bold 22px "JetBrains Mono", monospace'; cs.fillText('CV', 108, 132);
+  }
+
+  function render(){
+    drawScene();
+    var data = cs.getImageData(0, 0, DW, DH);
+    var px = data.data;
+    var gray = new Float32Array(DW * DH);
+    var withNoise = noiseBox.checked;
+    for (var i = 0; i < DW * DH; i++) {
+      var g = 0.299 * px[i * 4] + 0.587 * px[i * 4 + 1] + 0.114 * px[i * 4 + 2];
+      if (withNoise) {
+        g += noise[i];
+        var c = Math.max(0, Math.min(255, g));
+        px[i * 4] = Math.max(0, Math.min(255, px[i * 4] + noise[i]));
+        px[i * 4 + 1] = Math.max(0, Math.min(255, px[i * 4 + 1] + noise[i]));
+        px[i * 4 + 2] = Math.max(0, Math.min(255, px[i * 4 + 2] + noise[i]));
+        g = c;
+      }
+      gray[i] = g;
+    }
+    if (withNoise) cs.putImageData(data, 0, 0);
+
+    var o = co.createImageData(DW, DH);
+    var od = o.data;
+    for (var y = 0; y < DH; y++) {
+      for (var x = 0; x < DW; x++) {
+        var k = (y * DW + x) * 4;
+        if (x === 0 || y === 0 || x === DW - 1 || y === DH - 1) {
+          od[k] = od[k + 1] = od[k + 2] = 0; od[k + 3] = 255; continue;
+        }
+        var tl = gray[(y - 1) * DW + x - 1], tc = gray[(y - 1) * DW + x], tr = gray[(y - 1) * DW + x + 1];
+        var ml = gray[y * DW + x - 1],                                   mr = gray[y * DW + x + 1];
+        var bl = gray[(y + 1) * DW + x - 1], bc = gray[(y + 1) * DW + x], br = gray[(y + 1) * DW + x + 1];
+        var gx = -tl + tr - 2 * ml + 2 * mr - bl + br;
+        var gy = -tl - 2 * tc - tr + bl + 2 * bc + br;
+        var r, gg, b;
+        if (mode === 'mag') {
+          var m = Math.min(255, Math.sqrt(gx * gx + gy * gy) / 2);
+          r = m * 0.25; gg = m * 0.9; b = m;
+        } else {
+          var val = mode === 'gx' ? gx : gy;
+          var a = Math.min(255, Math.abs(val) / 2);
+          if (val >= 0) { r = a * 0.3; gg = a; b = a * 0.63; }   // verde: positivo
+          else          { r = a; gg = a * 0.36; b = a * 0.48; }   // vermelho: negativo
+        }
+        od[k] = r; od[k + 1] = gg; od[k + 2] = b; od[k + 3] = 255;
+      }
+    }
+    co.putImageData(o, 0, 0);
+    cap.textContent = labels[mode];
+  }
+
+  var buttons = document.querySelectorAll('.demo-controls button');
+  Array.prototype.forEach.call(buttons, function(btn){
+    btn.addEventListener('click', function(){
+      mode = btn.getAttribute('data-mode');
+      Array.prototype.forEach.call(buttons, function(b){ b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'); });
+      render();
+    });
+  });
+  noiseBox.addEventListener('change', render);
+
+  render();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(render);
+})();
+</script>
+
+</body>
+</html>
