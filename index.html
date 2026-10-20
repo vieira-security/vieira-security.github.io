@@ -287,6 +287,11 @@
   }
   .demo-controls input{accent-color:var(--cyan);}
 
+  /* ---------- extras do post 07 ---------- */
+  .demo-stage canvas.hist{aspect-ratio:256/90; border-top:1px solid var(--line); image-rendering:pixelated;}
+  .demo-stage canvas.gray{image-rendering:pixelated;}
+  .demo .readout .lv{color:var(--cyan);}
+
   /* ---------- footer ---------- */
   footer{border-top:1px solid var(--line); padding:28px 0;}
   .footer-wrap{
@@ -347,6 +352,7 @@
         <li><a href="#post-4">04</a></li>
         <li><a href="#post-5">05</a></li>
         <li><a href="#post-6">06</a></li>
+        <li><a href="#post-7">07</a></li>
       </ul>
     </nav>
   </div>
@@ -361,7 +367,7 @@
       <h1>Da geometria ao pixel: um semestre de <span class="hl">Computação Visual</span></h1>
       <p class="hero-lead">Anotações e reflexões pessoais ao longo da disciplina — o que eu esperava encontrar, o que fui descobrindo, e o que ainda não sei.</p>
       <div class="stats">
-        <span class="stat"><b>06</b>posts</span>
+        <span class="stat"><b>07</b>posts</span>
         <span class="stat"><b>RGB</b>3 canais</span>
         <span class="stat"><b>8bit</b>256 níveis</span>
       </div>
@@ -400,7 +406,8 @@
       <a class="toc-item" href="#post-3"><span class="toc-top"><span class="n">#03</span><span>amostragem</span></span><strong>Amostragem e quantização</strong></a>
       <a class="toc-item" href="#post-4"><span class="toc-top"><span class="n">#04</span><span>cnn</span></span><strong>A história e o funcionamento das CNNs</strong></a>
       <a class="toc-item" href="#post-5"><span class="toc-top"><span class="n">#05</span><span>visão computacional</span></span><strong>Visão computacional em carros autônomos</strong></a>
-      <a class="toc-item is-new" href="#post-6"><span class="toc-top"><span class="n">#06</span><span class="badge-new">novo</span></span><strong>Detecção de bordas: como o computador encontra contornos</strong></a>
+      <a class="toc-item" href="#post-6"><span class="toc-top"><span class="n">#06</span><span>filtros &amp; bordas</span></span><strong>Detecção de bordas: como o computador encontra contornos</strong></a>
+      <a class="toc-item is-new" href="#post-7"><span class="toc-top"><span class="n">#07</span><span class="badge-new">novo</span></span><strong>Histograma e equalização: quando a foto sai escura demais</strong></a>
     </div>
   </div>
 </section>
@@ -538,6 +545,61 @@
 
           <p>Ligando o ruído dá pra ver o maior problema do Sobel: ele não sabe diferenciar uma borda "de verdade" de um pixel que só saiu um pouco diferente do vizinho. Qualquer granulado vira um monte de pontinhos acesos. Por isso, na prática, quase sempre se aplica um desfoque antes (um filtro gaussiano, que também é uma convolução) — e algoritmos mais completos, como o de Canny, ainda afinam as bordas e descartam as fracas. Isso conecta direto com o post dos carros autônomos: confundir uma sombra ou uma mancha no asfalto com a faixa da pista é exatamente esse problema, só que com consequência real.</p>
           <p>O que mais me marcou foi a comparação com as CNNs. No Sobel, alguém escolheu aqueles números (−1, −2, +1, +2) à mão, pensando no que uma borda significa. Numa CNN, ninguém escolhe nada: a rede começa com filtros aleatórios e aprende os valores sozinha durante o treinamento. E o curioso é que, quando se visualizam os filtros da primeira camada de redes já treinadas, muitos deles acabam parecidos com detectores de borda — a rede "redescobre" sozinha uma ideia que já existia muito antes dela. No fim, a lição pra mim foi essa: o computador não enxerga formas, ele enxerga diferenças. A forma é algo que a gente monta depois, em cima delas.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="post" id="post-7">
+    <div class="window">
+      <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span>post_07.md<span class="right">~6 min</span></div>
+      <div class="post-inner">
+        <div class="post-meta"><span>30 out 2026</span><span class="tag">histograma &amp; contraste</span></div>
+        <h2>Histograma e equalização: quando a foto sai escura demais</h2>
+        <div class="post-body">
+          <p>Tirei uma foto à noite com o celular e ela saiu praticamente toda preta. Por curiosidade, abri o editor, puxei o controle de "sombras" pro máximo — e de repente apareceram árvores, uma casa, o contorno de um morro. Coisas que eu jurava que não estavam na foto. Na aula de histograma eu entendi o que tinha acontecido: a informação sempre esteve ali, só estava espremida numa faixa minúscula de valores.</p>
+          <p>O histograma é uma ideia quase boba de tão simples: pra cada nível de intensidade, de <code>0</code> a <code>255</code>, você conta quantos pixels da imagem têm aquele valor. Só isso. Ele não diz <em>onde</em> os pixels estão, só <em>quantos</em> existem de cada tom. Mas só de olhar o formato já dá pra diagnosticar a foto: uma imagem escura tem as barras todas amontoadas na esquerda; uma imagem estourada, na direita; uma imagem com bom contraste espalha as barras pela faixa inteira. Lembrando do post de quantização: uma imagem de 8 bits tem 256 níveis disponíveis — e a minha foto noturna usava só uma fração pequena deles.</p>
+          <p>A primeira solução que vem na cabeça é o esticamento linear: pega o menor e o maior valor da imagem e "estica" esse intervalo pra ocupar de 0 a 255. Funciona bem em alguns casos, mas tem um problema bem traiçoeiro: se existir <em>um único</em> ponto claro na cena — a lua, um poste aceso, uma janela — o maior valor já está lá em cima, e o esticamento praticamente não muda nada. A imagem continua escura.</p>
+          <p>A equalização resolve isso de um jeito mais esperto, usando o histograma acumulado (a CDF): pra cada nível, quantos pixels da imagem têm aquele valor <em>ou menos</em>. O novo valor de cada pixel passa a ser proporcional a essa fração. Na prática, os tons onde existem muitos pixels ganham bastante espaço na escala nova, e os tons quase vazios são comprimidos — o resultado é um histograma muito mais espalhado.</p>
+
+          <div class="kernels" role="group" aria-label="Fórmula da equalização de histograma">
+            <div class="formula">histograma acumulado<br><b>CDF(r) = (nº de pixels com valor ≤ r) / total</b></div>
+            <div class="formula">novo valor do pixel<br><b>s = round( 255 · CDF(r) )</b></div>
+          </div>
+
+          <p>Pra ver na prática, montei outra demo: uma cena noturna sintética, gerada no navegador, com pouco contraste de propósito — e com uma lua bem clara pra atrapalhar o esticamento. Embaixo de cada imagem aparece o histograma dela, e dá pra ligar a curva acumulada (em verde) pra ver de onde sai a equalização.</p>
+
+          <div class="demo">
+            <div class="window">
+              <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span>histograma_demo.js<span class="right">240×160 px · 8 bits</span></div>
+              <div class="demo-stage">
+                <figure>
+                  <canvas class="gray" id="eq-src" width="240" height="160" aria-label="Imagem original: cena noturna com pouco contraste"></canvas>
+                  <canvas class="hist" id="eq-src-hist" width="256" height="90" aria-label="Histograma da imagem original"></canvas>
+                  <figcaption>entrada</figcaption>
+                </figure>
+                <figure>
+                  <canvas class="gray" id="eq-out" width="240" height="160" aria-label="Imagem processada"></canvas>
+                  <canvas class="hist" id="eq-out-hist" width="256" height="90" aria-label="Histograma da imagem processada"></canvas>
+                  <figcaption id="eq-cap">saída · equalizada</figcaption>
+                </figure>
+              </div>
+              <div class="readout">
+                <span id="eq-ro-in">entrada: — níveis</span>
+                <span id="eq-ro-out">saída: — níveis</span>
+              </div>
+              <div class="demo-controls">
+                <span>operação:</span>
+                <button type="button" data-mode="orig" aria-pressed="false">original</button>
+                <button type="button" data-mode="stretch" aria-pressed="false">esticamento</button>
+                <button type="button" data-mode="eq" aria-pressed="true">equalização</button>
+                <label><input type="checkbox" id="eq-cdf" checked> curva acumulada</label>
+              </div>
+            </div>
+          </div>
+
+          <p>Duas coisas me chamaram atenção brincando com a demo. A primeira é que o histograma equalizado não fica liso, fica parecendo um pente — cheio de barras com buracos entre elas. Faz sentido: a equalização não inventa tons novos, ela só redistribui os que já existiam. Se a imagem original usava poucos níveis, a saída continua com esses mesmos poucos níveis (ou menos), só que agora espalhados pela escala inteira. A segunda é que o granulado aparece muito mais depois de equalizar. A mesma operação que revela a casa e o morro também amplifica aquelas pequenas variações de ruído que estavam escondidas no escuro — o mesmo problema do post de bordas, aparecendo de novo por outro caminho.</p>
+          <p>O que mais me marcou foi a diferença em relação ao Sobel. Lá, cada pixel novo dependia dos vizinhos; aqui, cada pixel é transformado só pelo próprio valor, usando uma tabela que vale pra imagem inteira — é uma operação pontual. E é justamente por ser global que ela tem limites: uma região muito escura e outra muito clara na mesma foto disputam a mesma tabela. Por isso existem versões adaptativas, como o CLAHE, que equalizam a imagem por regiões. No fim, a lição foi parecida com a do post anterior: pro computador, "escuro" não quer dizer que falta informação — muitas vezes ela só está mal distribuída.</p>
         </div>
       </div>
     </div>
@@ -691,7 +753,7 @@
     cap.textContent = labels[mode];
   }
 
-  var buttons = document.querySelectorAll('.demo-controls button');
+  var buttons = document.querySelectorAll('#post-6 .demo-controls button');
   Array.prototype.forEach.call(buttons, function(btn){
     btn.addEventListener('click', function(){
       mode = btn.getAttribute('data-mode');
@@ -703,6 +765,130 @@
 
   render();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(render);
+})();
+
+(function(){
+  /* ---------- post 07: demo de histograma e equalização ---------- */
+  var srcImg = document.getElementById('eq-src');
+  var outImg = document.getElementById('eq-out');
+  if (!srcImg || !outImg || !srcImg.getContext) return;
+  var srcHist = document.getElementById('eq-src-hist');
+  var outHist = document.getElementById('eq-out-hist');
+  var W = srcImg.width, H = srcImg.height, N = W * H;
+  var mode = 'eq';
+  var cdfBox = document.getElementById('eq-cdf');
+  var cap = document.getElementById('eq-cap');
+  var roIn = document.getElementById('eq-ro-in'), roOut = document.getElementById('eq-ro-out');
+  var labels = {orig: 'saída · original', stretch: 'saída · esticamento', eq: 'saída · equalizada'};
+
+  // cena noturna sintética, com pouco contraste de propósito
+  var lum = new Uint8Array(N);
+  var seed = 11;
+  for (var y = 0; y < H; y++) {
+    for (var x = 0; x < W; x++) {
+      var dm = (x - 186) * (x - 186) + (y - 36) * (y - 36);
+      var v = 16 + 20 * (y / 100) + 30 * Math.exp(-dm / 700);      // céu + halo da lua
+      var back = 92 + 16 * Math.sin(x * 0.031) + 7 * Math.sin(x * 0.11 + 1);
+      var front = 112 + 10 * Math.sin(x * 0.052 + 2) + 4 * Math.sin(x * 0.17);
+      if (y > back) v = 32 + (y - back) * 0.2;                       // serra ao fundo
+      if (y > front) v = 22 + (y - front) * 0.12;                    // morro da frente
+      if (y > 130) v = 28 + 4 * Math.sin(y * 1.7) + 18 * Math.exp(-(x - 186) * (x - 186) / 60) * (0.5 + 0.5 * Math.sin(y * 1.3)); // lago + reflexo
+      if (x >= 50 && x <= 78 && y >= 104 && y <= 124) v = 14;        // casa
+      if (y >= 109 && y <= 114 && ((x >= 55 && x <= 60) || (x >= 67 && x <= 72))) v = 190; // janelas acesas
+      if (dm < 121) v = 236;                                         // lua
+      seed = (seed * 16807) % 2147483647;
+      v += (seed / 2147483647 - 0.5) * 7;                            // ruído leve do sensor
+      lum[y * W + x] = Math.max(0, Math.min(255, Math.round(v)));
+    }
+  }
+
+  function histogram(arr){
+    var h = new Uint32Array(256);
+    for (var i = 0; i < arr.length; i++) h[arr[i]]++;
+    return h;
+  }
+
+  function buildLut(h){
+    var lut = new Uint8Array(256), i;
+    if (mode === 'orig') {
+      for (i = 0; i < 256; i++) lut[i] = i;
+    } else if (mode === 'stretch') {
+      var lo = 0, hi = 255;
+      while (lo < 255 && !h[lo]) lo++;
+      while (hi > 0 && !h[hi]) hi--;
+      for (i = 0; i < 256; i++) lut[i] = Math.max(0, Math.min(255, Math.round((i - lo) * 255 / Math.max(1, hi - lo))));
+    } else {
+      var acc = 0;
+      for (i = 0; i < 256; i++) { acc += h[i]; lut[i] = Math.round(255 * acc / N); }
+    }
+    return lut;
+  }
+
+  function drawGray(canvas, arr){
+    var ctx = canvas.getContext('2d');
+    var o = ctx.createImageData(W, H);
+    for (var i = 0; i < N; i++) {
+      o.data[i * 4] = o.data[i * 4 + 1] = o.data[i * 4 + 2] = arr[i];
+      o.data[i * 4 + 3] = 255;
+    }
+    ctx.putImageData(o, 0, 0);
+  }
+
+  function drawHist(canvas, h){
+    var ctx = canvas.getContext('2d');
+    var HW = canvas.width, HH = canvas.height, top = HH - 4, max = 1, i;
+    for (i = 0; i < 256; i++) if (h[i] > max) max = h[i];
+    ctx.fillStyle = '#0a0e14'; ctx.fillRect(0, 0, HW, HH);
+    ctx.fillStyle = '#3be4ff';
+    for (i = 0; i < 256; i++) {
+      if (!h[i]) continue;
+      var bh = Math.max(1, h[i] / max * (top - 4));
+      ctx.fillRect(i, HH - bh, 1, bh);
+    }
+    if (!cdfBox.checked) return;
+    ctx.strokeStyle = '#4dffa0'; ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    var acc = 0;
+    for (i = 0; i < 256; i++) {
+      acc += h[i];
+      var cy = HH - acc / N * top;
+      if (i === 0) ctx.moveTo(0, cy); else ctx.lineTo(i + 0.5, cy);
+    }
+    ctx.stroke();
+  }
+
+  function describe(prefix, h){
+    var used = 0, lo = -1, hi = 0;
+    for (var i = 0; i < 256; i++) if (h[i]) { used++; if (lo < 0) lo = i; hi = i; }
+    return prefix + ': <span class="lv">' + used + '</span> níveis usados · faixa ' + lo + '–' + hi;
+  }
+
+  function render(){
+    var hIn = histogram(lum);
+    var lut = buildLut(hIn);
+    var out = new Uint8Array(N);
+    for (var i = 0; i < N; i++) out[i] = lut[lum[i]];
+    var hOut = histogram(out);
+    drawGray(srcImg, lum);
+    drawGray(outImg, out);
+    drawHist(srcHist, hIn);
+    drawHist(outHist, hOut);
+    roIn.innerHTML = describe('entrada', hIn);
+    roOut.innerHTML = describe('saída', hOut);
+    cap.textContent = labels[mode];
+  }
+
+  var buttons = document.querySelectorAll('#post-7 .demo-controls button');
+  Array.prototype.forEach.call(buttons, function(btn){
+    btn.addEventListener('click', function(){
+      mode = btn.getAttribute('data-mode');
+      Array.prototype.forEach.call(buttons, function(b){ b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'); });
+      render();
+    });
+  });
+  cdfBox.addEventListener('change', render);
+
+  render();
 })();
 </script>
 
