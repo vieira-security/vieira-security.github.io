@@ -292,16 +292,6 @@
   .demo-stage canvas.gray{image-rendering:pixelated;}
   .demo .readout .lv{color:var(--cyan);}
 
-  /* ---------- extras do post 08 ---------- */
-  .seg-hist{margin:0; position:relative; background:var(--bg-2); border-top:1px solid var(--line);}
-  .seg-hist canvas{display:block; width:100%; height:auto; aspect-ratio:480/110;}
-  .seg-hist figcaption{
-    position:absolute; left:10px; top:10px;
-    font-family:var(--mono); font-size:11px; color:var(--text);
-    background:rgba(6,8,12,.75); padding:3px 8px; border-radius:4px;
-  }
-  .demo-controls .seg-range{flex:1 1 140px; min-width:120px;}
-  .demo-controls output{font-family:var(--mono); font-size:12px; color:var(--cyan); min-width:7ch;}
 
   /* ---------- footer ---------- */
   footer{border-top:1px solid var(--line); padding:28px 0;}
@@ -420,7 +410,7 @@
       <a class="toc-item" href="#post-5"><span class="toc-top"><span class="n">#05</span><span>visão computacional</span></span><strong>Visão computacional em carros autônomos</strong></a>
       <a class="toc-item" href="#post-6"><span class="toc-top"><span class="n">#06</span><span>filtros &amp; bordas</span></span><strong>Detecção de bordas: como o computador encontra contornos</strong></a>
       <a class="toc-item" href="#post-7"><span class="toc-top"><span class="n">#07</span><span>histograma &amp; contraste</span></span><strong>Histograma e equalização: quando a foto sai escura demais</strong></a>
-      <a class="toc-item is-new" href="#post-8"><span class="toc-top"><span class="n">#08</span><span class="badge-new">novo</span></span><strong>Segmentação: separando o objeto do fundo</strong></a>
+      <a class="toc-item is-new" href="#post-8"><span class="toc-top"><span class="n">#08</span><span class="badge-new">novo</span></span><strong>Reflexão final</strong></a>
     </div>
   </div>
 </section>
@@ -620,36 +610,16 @@
 
   <article class="post" id="post-8">
     <div class="window">
-      <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span>post_08.md<span class="right">~6 min</span></div>
+      <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span>post_08.md<span class="right">~1 min</span></div>
       <div class="post-inner">
-        <div class="post-meta"><span>06 nov 2026</span><span class="tag">segmentação</span></div>
-        <h2>Segmentação: separando o objeto do fundo</h2>
+        <div class="post-meta"><span>08 nov 2026</span><span class="tag">reflexão</span></div>
+        <h2>Reflexão final</h2>
         <div class="post-body">
-          <p>No post dos carros autônomos eu escrevi, meio de passagem, que o difícil é "separar o que é fundo do que é objeto relevante". Na hora pareceu só uma frase de efeito. Depois do post sobre bordas, ela voltou com outra cara: o Sobel me diz <em>onde</em> o valor muda, mas não diz o que está dentro e o que está fora. Uma borda é uma linha; um objeto é uma região. Passar de uma coisa pra outra tem nome — segmentação — e, no fundo, é dar um rótulo pra cada pixel da imagem: esse aqui é objeto, esse aqui é fundo.</p>
-          <p>A forma mais simples de fazer isso cabe numa linha: escolher um valor de corte, o limiar <code>T</code>. Todo pixel mais claro que <code>T</code> vira objeto; todo o resto vira fundo. O resultado é uma imagem binária, só com dois valores. Achei curioso perceber que isso é praticamente a quantização do post 03 levada ao extremo: em vez de 256 níveis, sobram dois. Só que aqui a perda de informação é de propósito — a ideia é justamente jogar fora tudo que não ajuda a responder "é objeto ou não?".</p>
-          <p>O problema, claro, é escolher o <code>T</code>. E aqui o histograma do post anterior volta com outra função: lá ele servia pra diagnosticar e redistribuir os tons; aqui ele mostra <em>onde cortar</em>. Se objeto e fundo são bem diferentes, o histograma forma dois "morros" — um pro fundo escuro, outro pros objetos claros — e o limiar ideal fica no vale entre eles. O método de Otsu, de 1979, automatiza essa escolha: testa todos os 256 cortes possíveis e fica com aquele que deixa cada grupo o mais homogêneo possível por dentro (em termos técnicos, o que minimiza a variância dentro de cada classe). É mais uma operação pontual, como a equalização: cada pixel é decidido só pelo próprio valor, comparado com um número que vale pra imagem inteira.</p>
-          <p>Montei mais uma demo pra ver isso funcionando: uma imagem em tons de cinza com alguns "objetos" claros sobre um fundo escuro, o histograma dela e a imagem binária que sai do corte. Dá pra arrastar o limiar à mão, deixar o Otsu escolher — e ligar uma iluminação irregular, como se a luz viesse só de um lado.</p>
-
-          <div class="demo">
-            <div class="window">
-              <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span>limiar_demo.js<span class="right">240×160 px</span></div>
-              <div class="demo-stage">
-                <figure><canvas id="seg-src" width="240" height="160" aria-label="Imagem sintética em tons de cinza com objetos claros sobre fundo escuro"></canvas><figcaption>entrada</figcaption></figure>
-                <figure><canvas id="seg-out" width="240" height="160" aria-label="Imagem binária resultante da limiarização"></canvas><figcaption>saída · binária</figcaption></figure>
-              </div>
-              <figure class="seg-hist"><canvas id="seg-hist" width="480" height="110" aria-label="Histograma de intensidades com a posição do limiar"></canvas><figcaption>histograma</figcaption></figure>
-              <div class="demo-controls">
-                <span>limiar:</span>
-                <input type="range" class="seg-range" id="seg-t" min="0" max="255" value="128" aria-label="Valor do limiar">
-                <output id="seg-t-val" for="seg-t">T = 128</output>
-                <button type="button" id="seg-otsu">Otsu</button>
-                <label><input type="checkbox" id="seg-light"> iluminação irregular</label>
-              </div>
-            </div>
-          </div>
-
-          <p>Com a iluminação uniforme, qualquer valor no vale funciona e o Otsu acerta de primeira. Mas ligando a iluminação irregular, os dois morros do histograma se espalham e se misturam — o fundo do lado direito fica mais claro que os objetos do lado esquerdo. Aí não existe <code>T</code> que resolva: ou somem os objetos da esquerda, ou o fundo inteiro da direita vira "objeto". Nem o Otsu salva, porque o problema não é a escolha do número, é que um número só não basta. É a mesma limitação que apareceu no fim do post da equalização, quando regiões claras e escuras disputavam a mesma tabela — e a saída também é parecida: o limiar adaptativo, que calcula um <code>T</code> pra cada vizinhança, comparando o pixel com a média da região ao redor. De novo a ideia de olhar em pedaços. E de novo dá pra ligar com os carros: a sombra de uma árvore atravessando o asfalto é exatamente esse tipo de iluminação irregular.</p>
-          <p>O que me fez repensar o assunto foi perceber que a segmentação moderna, feita com redes neurais, continua respondendo a mesma pergunta. Redes como a U-Net (criada em 2015 pra imagens médicas) recebem uma imagem e devolvem um rótulo por pixel — só que, em vez de "objeto ou fundo", os rótulos podem ser "pista", "calçada", "pedestre", "carro". É o que se chama de segmentação semântica, e é uma das coisas que um carro autônomo faz a cada quadro. A diferença é que a rede não decide por um corte de brilho: ela usa tudo que as camadas convolucionais aprenderam sobre forma, textura e contexto. O limiar é a versão de uma linha da mesma ideia — e a lição que ficou foi essa: segmentar é classificar, só que pixel por pixel.</p>
+          <p>O assunto que mais me marcou foi o de histograma: ver a transição da imagem do preto para o noturno, algo que eu nunca imaginaria.</p>
+          <p>Passei a enxergar jogos diferente, com base na densidade de ações que vemos quando jogamos.</p>
+          <p>Usei a IA para fazer as partes mais complicadas de entender, para eu ter um conhecimento maior.</p>
+          <p>Gostaria de entender melhor sobre amostragem e quantização, para compreender melhor como funciona a função discreta nas imagens.</p>
+          <p>Confirmei que a matéria é mais sobre lógica e matemática sobre a imagem, como eu desconfiava no post 1.</p>
         </div>
       </div>
     </div>
@@ -941,105 +911,6 @@
   render();
 })();
 
-(function(){
-  /* ---------- post 08: demo de limiarização ---------- */
-  var src = document.getElementById('seg-src');
-  var out = document.getElementById('seg-out');
-  var hist = document.getElementById('seg-hist');
-  if (!src || !out || !hist || !src.getContext) return;
-  var cs = src.getContext('2d'), co = out.getContext('2d'), ch = hist.getContext('2d');
-  var W = src.width, H = src.height;
-  var slider = document.getElementById('seg-t');
-  var tVal = document.getElementById('seg-t-val');
-  var lightBox = document.getElementById('seg-light');
-  var otsuBtn = document.getElementById('seg-otsu');
-
-  // "objetos" claros: círculos (x, y, raio)
-  var blobs = [[38, 44, 20], [92, 104, 26], [150, 46, 18], [204, 112, 22], [200, 36, 12], [36, 128, 13]];
-
-  // ruído determinístico (mesma imagem a cada render)
-  var noise = new Float32Array(W * H);
-  var seed = 11;
-  for (var n = 0; n < noise.length; n++) {
-    seed = (seed * 16807) % 2147483647;
-    noise[n] = (seed / 2147483647 - 0.5) * 36;
-  }
-
-  var gray = new Uint8ClampedArray(W * H);
-  var counts = new Uint32Array(256);
-
-  function buildScene(){
-    var uneven = lightBox.checked;
-    var img = cs.createImageData(W, H), d = img.data;
-    for (var c = 0; c < 256; c++) counts[c] = 0;
-    for (var y = 0; y < H; y++) {
-      for (var x = 0; x < W; x++) {
-        var v = 60;
-        for (var b = 0; b < blobs.length; b++) {
-          var dx = x - blobs[b][0], dy = y - blobs[b][1];
-          if (dx * dx + dy * dy <= blobs[b][2] * blobs[b][2]) { v = 170; break; }
-        }
-        // luz vindo da direita: escurece a esquerda e clareia a direita
-        if (uneven) v += -50 + 180 * (x / (W - 1));
-        var i = y * W + x;
-        var g = Math.max(0, Math.min(255, Math.round(v + noise[i])));
-        gray[i] = g; counts[g]++;
-        d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = g; d[i * 4 + 3] = 255;
-      }
-    }
-    cs.putImageData(img, 0, 0);
-  }
-
-  // Otsu: maximiza a variância entre classes (= minimiza a variância dentro de cada uma)
-  function otsu(){
-    var total = W * H, sum = 0;
-    for (var k = 0; k < 256; k++) sum += k * counts[k];
-    var sumB = 0, wB = 0, best = -1, bestT = 0, lastT = 0;
-    for (var t = 0; t < 256; t++) {
-      wB += counts[t];
-      if (wB === 0) continue;
-      var wF = total - wB;
-      if (wF === 0) break;
-      sumB += t * counts[t];
-      var mB = sumB / wB, mF = (sum - sumB) / wF;
-      var between = wB * wF * (mB - mF) * (mB - mF);
-      if (between > best) { best = between; bestT = lastT = t; }
-      else if (between === best) lastT = t;   // empate: vale vazio no histograma
-    }
-    return Math.round((bestT + lastT) / 2);
-  }
-
-  function render(){
-    var t = +slider.value;
-    tVal.textContent = 'T = ' + t;
-
-    var o = co.createImageData(W, H), od = o.data;
-    for (var i = 0; i < W * H; i++) {
-      var on = gray[i] > t;
-      od[i * 4] = on ? 77 : 13; od[i * 4 + 1] = on ? 255 : 18; od[i * 4 + 2] = on ? 160 : 26; od[i * 4 + 3] = 255;
-    }
-    co.putImageData(o, 0, 0);
-
-    var HW = hist.width, HH = hist.height, bw = HW / 256, max = 1;
-    for (var k = 0; k < 256; k++) if (counts[k] > max) max = counts[k];
-    ch.clearRect(0, 0, HW, HH);
-    for (var j = 0; j < 256; j++) {
-      var h = counts[j] / max * (HH - 26);
-      ch.fillStyle = j > t ? '#4dffa0' : '#7b889b';
-      ch.fillRect(j * bw, HH - h, Math.ceil(bw), h);
-    }
-    var lx = Math.round((t + 0.5) * bw) + 0.5;
-    ch.strokeStyle = '#3be4ff'; ch.lineWidth = 1;
-    ch.beginPath(); ch.moveTo(lx, 0); ch.lineTo(lx, HH); ch.stroke();
-  }
-
-  slider.addEventListener('input', render);
-  otsuBtn.addEventListener('click', function(){ slider.value = otsu(); render(); });
-  lightBox.addEventListener('change', function(){ buildScene(); render(); });
-
-  buildScene();
-  render();
-})();
 </script>
 
 </body>
